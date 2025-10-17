@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import faiss
-from langchain.chat_models import HuggingFaceChat
-from langchain.prompts import ChatPromptTemplate
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 # ------------------ PAGE SETUP ------------------
 st.set_page_config(page_title="Tender Chatbot", page_icon="🤖", layout="centered")
@@ -46,6 +45,17 @@ def retrieve_tenders(query, top_k=3):
     results = [df.iloc[i]['text'] for i in I[0] if i < len(df)]
     return results
 
+# ------------------ LOAD PUBLIC MODEL ------------------
+@st.cache_resource(ttl=86400)
+def load_model():
+    model_name = "TheBloke/Wizard-Vicuna-7B-1.0-HF"  # free HF model
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    generator = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=300)
+    return generator
+
+generator = load_model()
+
 # ------------------ CHAT STATE ------------------
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
@@ -71,9 +81,7 @@ Question: {user_input}
 Answer:
 """
 
-    # ------------------ HUGGING FACE CHAT MODEL ------------------
-    chat = HuggingFaceChat(model_name="TheBloke/Wizard-Vicuna-7B-1.0-HF")  # free smaller model
-    answer = chat.predict(prompt)
+    answer = generator(prompt)[0]['generated_text']
 
     st.session_state["messages"].append({"role": "assistant", "text": answer})
 
