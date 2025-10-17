@@ -37,32 +37,32 @@ def find_tenders(query):
     query = query.lower()
     filtered = df.copy()
 
-    # Filter by city
-    cities = [c for c in df['city'].unique() if c in query]
-    if cities:
-        filtered = filtered[filtered['city'].isin(cities)]
+    # ------------------ CITY FILTER ------------------
+    city_matches = df['city'][df['city'].apply(lambda x: x in query)].unique().tolist()
+    if city_matches:
+        filtered = filtered[filtered['city'].isin(city_matches)]
 
-    # Filter by state
-    states = [s for s in df['state'].unique() if s in query]
-    if states:
-        filtered = filtered[filtered['state'].isin(states)]
+    # ------------------ STATE FILTER ------------------
+    state_matches = df['state'][df['state'].apply(lambda x: x in query)].unique().tolist()
+    if state_matches:
+        filtered = filtered[filtered['state'].isin(state_matches)]
 
-    # Filter by category
-    cats = [cat for cat in df['category'].unique() if cat in query]
-    if cats:
-        filtered = filtered[filtered['category'].isin(cats)]
+    # ------------------ CATEGORY FILTER ------------------
+    category_matches = df['category'][df['category'].apply(lambda x: x in query)].unique().tolist()
+    if category_matches:
+        filtered = filtered[filtered['category'].isin(category_matches)]
 
-    # Filter by start_date
-    starts = [d for d in df['start_date'].unique() if d in query]
-    if starts:
-        filtered = filtered[filtered['start_date'].isin(starts)]
+    # ------------------ START DATE FILTER ------------------
+    start_matches = df['start_date'][df['start_date'].apply(lambda x: x in query)].unique().tolist()
+    if start_matches:
+        filtered = filtered[filtered['start_date'].isin(start_matches)]
 
-    # Filter by end_date
-    ends = [d for d in df['end_date'].unique() if d in query]
-    if ends:
-        filtered = filtered[filtered['end_date'].isin(ends)]
+    # ------------------ END DATE FILTER ------------------
+    end_matches = df['end_date'][df['end_date'].apply(lambda x: x in query)].unique().tolist()
+    if end_matches:
+        filtered = filtered[filtered['end_date'].isin(end_matches)]
 
-    # Generate response
+    # ------------------ RESPONSE ------------------
     if filtered.empty:
         return "❌ Sorry, no tenders match your query."
 
