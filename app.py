@@ -37,35 +37,43 @@ def find_tenders(query):
     query = query.lower()
     filtered = df.copy()
 
-    # ------------------ CITY FILTER ------------------
-    city_matches = df['city'][df['city'].apply(lambda x: x in query)].unique().tolist()
-    if city_matches:
-        filtered = filtered[filtered['city'].isin(city_matches)]
+    found_any_filter = False  # Track if any filter matches
 
-    # ------------------ STATE FILTER ------------------
-    state_matches = df['state'][df['state'].apply(lambda x: x in query)].unique().tolist()
-    if state_matches:
-        filtered = filtered[filtered['state'].isin(state_matches)]
+    # CITY
+    cities = [c for c in df['city'].unique() if c in query]
+    if cities:
+        filtered = filtered[filtered['city'].isin(cities)]
+        found_any_filter = True
 
-    # ------------------ CATEGORY FILTER ------------------
-    category_matches = df['category'][df['category'].apply(lambda x: x in query)].unique().tolist()
-    if category_matches:
-        filtered = filtered[filtered['category'].isin(category_matches)]
+    # STATE
+    states = [s for s in df['state'].unique() if s in query]
+    if states:
+        filtered = filtered[filtered['state'].isin(states)]
+        found_any_filter = True
 
-    # ------------------ START DATE FILTER ------------------
-    start_matches = df['start_date'][df['start_date'].apply(lambda x: x in query)].unique().tolist()
-    if start_matches:
-        filtered = filtered[filtered['start_date'].isin(start_matches)]
+    # CATEGORY
+    categories = [cat for cat in df['category'].unique() if cat in query]
+    if categories:
+        filtered = filtered[filtered['category'].isin(categories)]
+        found_any_filter = True
 
-    # ------------------ END DATE FILTER ------------------
-    end_matches = df['end_date'][df['end_date'].apply(lambda x: x in query)].unique().tolist()
-    if end_matches:
-        filtered = filtered[filtered['end_date'].isin(end_matches)]
+    # START DATE
+    starts = [d for d in df['start_date'].unique() if d in query]
+    if starts:
+        filtered = filtered[filtered['start_date'].isin(starts)]
+        found_any_filter = True
 
-    # ------------------ RESPONSE ------------------
-    if filtered.empty:
+    # END DATE
+    ends = [d for d in df['end_date'].unique() if d in query]
+    if ends:
+        filtered = filtered[filtered['end_date'].isin(ends)]
+        found_any_filter = True
+
+    # If no filter matched at all OR filtered is empty, return no tenders
+    if not found_any_filter or filtered.empty:
         return "❌ Sorry, no tenders match your query."
 
+    # Otherwise, build response
     response = f"✅ I found {len(filtered)} tender(s) matching your query:\n\n"
     for _, row in filtered.iterrows():
         response += (
@@ -76,6 +84,7 @@ def find_tenders(query):
         )
     response += "For detailed information, click the URLs above."
     return response
+
 
 
 # ------------------ PROCESS USER QUERY ------------------
