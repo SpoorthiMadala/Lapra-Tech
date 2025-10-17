@@ -3,11 +3,10 @@ import pandas as pd
 
 # ------------------ PAGE SETUP ------------------
 st.set_page_config(
-    page_title="Tender Chatbot",
-    page_icon="🤖",
+    page_title="Lapra-Tech",
     layout="centered"
 )
-st.title("🤖 Tender Information Chatbot")
+st.title("Lapra-Tech")
 
 # ------------------ GOOGLE SHEET CSV LINK ------------------
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLyLYPptNyIgUvgLLcdjxmLcy8ZbcVL5MJk5o5wMDwBXXZCD5VHj2_9Gj5z-wGBnAuaCkj-iJYezPX/pub?output=csv"
@@ -23,7 +22,7 @@ def load_data():
     return df
 
 df = load_data()
-st.sidebar.info(f"💾 Loaded {len(df)} tenders from Google Sheet")
+st.sidebar.info(f"Loaded {len(df)} tenders from Google Sheet")
 
 # ------------------ SESSION STATE FOR CHAT ------------------
 if "messages" not in st.session_state:
@@ -74,13 +73,13 @@ def find_tenders(query):
         return "❌ Sorry, no tenders match your query."
 
     # Otherwise, build response
-    response = f"✅ I found {len(filtered)} tender(s) matching your query:\n\n"
+    response = f"I found {len(filtered)} tender(s) matching your query:\n\n"
     for _, row in filtered.iterrows():
         response += (
             f"**{row['name'].title()}** — {row['category'].title()}\n"
-            f"📍 {row['city'].title()}, {row['state'].title()}\n"
-            f"🗓️ {row['start_date']} → {row['end_date']}\n"
-            f"🔗 [View Details]({row['url']})\n\n"
+            f"{row['city'].title()}, {row['state'].title()}\n"
+            f"{row['start_date']} → {row['end_date']}\n"
+            f"[View Details]({row['url']})\n\n"
         )
     response += "For detailed information, click the URLs above."
     return response
@@ -101,6 +100,6 @@ for msg in st.session_state["messages"]:
         st.chat_message("assistant").markdown(msg["text"])
 
 # ------------------ REFRESH BUTTON ------------------
-if st.sidebar.button("🔄 Refresh Google Sheet"):
+if st.sidebar.button("Refresh Google Sheet"):
     st.cache_data.clear()  # Clear cached data
-    st.sidebar.success("✅ Google Sheet cache cleared! New data will load automatically.")
+    st.sidebar.success("Google Sheet cache cleared! New data will load automatically.")
