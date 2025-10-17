@@ -1,6 +1,4 @@
 streamlit
 pandas
-langchain
-chromadb
-sentence-transformers
-ctransformers
+transformers
+torch
