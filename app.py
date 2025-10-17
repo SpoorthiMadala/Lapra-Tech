@@ -77,6 +77,7 @@ def find_tenders(query):
     response += "For detailed information, click the URLs above."
     return response
 
+
 # ------------------ PROCESS USER QUERY ------------------
 if user_input:
     st.session_state["messages"].append({"role": "user", "text": user_input})
