@@ -1,65 +1,88 @@
 import streamlit as st
 import pandas as pd
+import re
 from transformers import pipeline
 
-# ------------------- CONFIG -------------------
-st.set_page_config(page_title="Excel Chatbot", page_icon="🤖", layout="centered")
-st.title("Lapra-Tech")
+st.set_page_config(page_title="Tender Chatbot", page_icon="📄", layout="wide")
+st.title("📊 Tender Info Chatbot (Excel-Powered, Free & Public)")
 
-# Replace this with your public Google Sheet CSV link
+# =================== LOAD DATA ===================
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLyLYPptNyIgUvgLLcdjxmLcy8ZbcVL5MJk5o5wMDwBXXZCD5VHj2_9Gj5z-wGBnAuaCkj-iJYezPX/pub?output=csv"
 
 @st.cache_data
 def load_data():
     df = pd.read_csv(CSV_URL)
+    df.columns = [c.strip().lower() for c in df.columns]  # normalize
     return df
 
 data = load_data()
 
-# Combine all rows into text knowledge
-knowledge_text = "\n".join(
-    f"Q: {row['Question']} A: {row['Answer']}" for _, row in data.iterrows()
-)
+st.sidebar.success("✅ Connected to Tender Sheet")
+st.sidebar.write(f"Rows Loaded: {len(data)}")
 
-# ------------------- MODEL -------------------
-st.sidebar.title("🤖 Model Info")
-st.sidebar.info("Using free Hugging Face model `google/flan-t5-base`")
+# =================== MODEL FOR QUERY PARSING ===================
+# (lightweight free model from Hugging Face)
+nlp = pipeline("text2text-generation", model="google/flan-t5-base")
 
-# Load model once (free, no key)
-qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-base")
+# =================== HELPER: FILTER FUNCTION ===================
+def find_tenders(user_input):
+    df = data.copy()
+    user_input = user_input.lower()
 
-# ------------------- CHAT SECTION -------------------
+    # 1️⃣ Try to detect city name from the query
+    cities = df['city'].dropna().unique().tolist()
+    detected_city = next((c for c in cities if c.lower() in user_input), None)
+
+    # 2️⃣ If a city is found, filter by it
+    if detected_city:
+        filtered = df[df['city'].str.lower() == detected_city.lower()]
+    else:
+        # Use model to guess keywords
+        response = nlp(f"Extract keywords for tender search: {user_input}", max_new_tokens=50)[0]['generated_text']
+        keywords = re.findall(r'\w+', response.lower())
+        filtered = df[df.apply(lambda row: any(kw in str(row).lower() for kw in keywords), axis=1)]
+
+    return filtered, detected_city
+
+# =================== CHATBOT INTERFACE ===================
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello 👋! I know everything in your Excel sheet. Ask me anything!"}
+        {"role": "assistant", "content": "Hi 👋! Ask me about tenders — for example: *Are there any tenders in Guntur?*"}
     ]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-user_input = st.chat_input("Ask your question...")
+user_query = st.chat_input("Type your question about tenders...")
 
-if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
+if user_query:
+    st.session_state.messages.append({"role": "user", "content": user_query})
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(user_query)
 
-    prompt = f"""
-    You are an assistant. Use the following knowledge base to answer questions accurately.
-
-    Knowledge base:
-    {knowledge_text}
-
-    Question: {user_input}
-    Answer:
-    """
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            result = qa_pipeline(prompt, max_new_tokens=150)[0]['generated_text']
-            st.markdown(result)
-    st.session_state.messages.append({"role": "assistant", "content": result})
+        with st.spinner("Searching tenders..."):
+            results, city = find_tenders(user_query)
 
-if st.sidebar.button("🔄 Refresh Excel Data"):
+            if not results.empty:
+                st.success(f"Found {len(results)} tenders" + (f" in {city}" if city else ""))
+                st.dataframe(results[['id', 'state', 'name', 'city', 'start_date', 'end_date', 'url']])
+
+                # Pretty list output
+                formatted = "\n\n".join([
+                    f"**{row['name']}** — {row['city']}  \n🗓️ {row['start_date']} → {row['end_date']}  \n🔗 [View Tender]({row['url']})"
+                    for _, row in results.iterrows()
+                ])
+                st.markdown(formatted)
+            else:
+                st.warning("No matching tenders found. Try another city or keyword!")
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": f"Found {len(results)} tenders{' in ' + city if city else ''}."
+    })
+
+if st.sidebar.button("🔄 Refresh Sheet"):
     st.cache_data.clear()
     st.experimental_rerun()
