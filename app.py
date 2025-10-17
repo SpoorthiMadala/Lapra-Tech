@@ -85,5 +85,6 @@ for msg in st.session_state["messages"]:
 
 # ------------------ REFRESH BUTTON ------------------
 if st.sidebar.button("🔄 Refresh Google Sheet"):
-    st.cache_data.clear()
-    st.experimental_rerun()
+    st.cache_data.clear()  # clear the cache
+    st.sidebar.success("✅ Google Sheet cache cleared! New data will load automatically.")
+
