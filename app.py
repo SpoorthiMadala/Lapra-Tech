@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import faiss
-from ctransformers import AutoModelForCausalLM
+from langchain.chat_models import HuggingFaceChat
+from langchain.prompts import ChatPromptTemplate
 
 # ------------------ PAGE SETUP ------------------
 st.set_page_config(page_title="Tender Chatbot", page_icon="🤖", layout="centered")
@@ -70,9 +71,9 @@ Question: {user_input}
 Answer:
 """
 
-    # Load free LLM via CTransformers
-    model = AutoModelForCausalLM("tiiuae/falcon-7b-instruct", model_type="llama")
-    answer = model.generate(prompt, max_new_tokens=300)
+    # ------------------ HUGGING FACE CHAT MODEL ------------------
+    chat = HuggingFaceChat(model_name="TheBloke/Wizard-Vicuna-7B-1.0-HF")  # free smaller model
+    answer = chat.predict(prompt)
 
     st.session_state["messages"].append({"role": "assistant", "text": answer})
 
