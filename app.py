@@ -15,10 +15,12 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTLyLYPptNyIgUvgLLcdj
 # ------------------ LOAD DATA ------------------
 @st.cache_data(ttl=60)  # cache for 60 seconds
 def load_data():
-    df = pd.read_csv(CSV_URL, dtype=str)  # read all as string
-    df = df.dropna(how='all')  # drop completely empty rows
-    # Rename columns (your sheet uses A,B,C... headers)
+    # Read CSV without headers since first row is actual data
+    df = pd.read_csv(CSV_URL, header=None, dtype=str)
+    # Assign proper column names
     df.columns = ["id", "name", "state", "city", "category", "start_date", "end_date", "url"]
+    # Remove fully empty rows
+    df = df.dropna(how='all')
     # Clean text for consistent matching
     df = df.apply(lambda x: x.str.strip().str.lower())
     return df
@@ -39,34 +41,19 @@ def find_tenders(query):
     filtered = df.copy()
 
     # Filter by city
-    for city in df['city'].unique():
-        if city in query:
-            filtered = filtered[filtered['city'] == city]
-            break
+    filtered = filtered[filtered['city'].str.contains('|'.join([c for c in df['city'].unique() if c in query]), na=False)]
 
     # Filter by state
-    for state in df['state'].unique():
-        if state in query:
-            filtered = filtered[filtered['state'] == state]
-            break
+    filtered = filtered[filtered['state'].str.contains('|'.join([s for s in df['state'].unique() if s in query]), na=False)]
 
     # Filter by category
-    for cat in df['category'].unique():
-        if cat in query:
-            filtered = filtered[filtered['category'] == cat]
-            break
+    filtered = filtered[filtered['category'].str.contains('|'.join([c for c in df['category'].unique() if c in query]), na=False)]
 
     # Filter by start_date
-    for date in df['start_date'].unique():
-        if date in query:
-            filtered = filtered[filtered['start_date'] == date]
-            break
+    filtered = filtered[filtered['start_date'].str.contains('|'.join([d for d in df['start_date'].unique() if d in query]), na=False)]
 
     # Filter by end_date
-    for date in df['end_date'].unique():
-        if date in query:
-            filtered = filtered[filtered['end_date'] == date]
-            break
+    filtered = filtered[filtered['end_date'].str.contains('|'.join([d for d in df['end_date'].unique() if d in query]), na=False)]
 
     # Generate conversational response
     if filtered.empty:
